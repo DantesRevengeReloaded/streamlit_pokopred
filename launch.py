@@ -83,8 +83,40 @@ def main():
         # For Streamlit Cloud: Execute the app content directly
         print("🚀 Starting app for Streamlit Cloud...")
         try:
-            # Import and execute the app module
-            exec(open('app.py').read())
+            # Set up the global namespace with required imports
+            import streamlit as st
+            import pandas as pd
+            import numpy as np
+            import plotly.express as px
+            import plotly.graph_objects as go
+            from datetime import datetime, date, timedelta
+            import warnings
+            warnings.filterwarnings('ignore')
+            
+            # Import local modules
+            import db
+            import geo
+            
+            # Create globals dictionary for exec
+            app_globals = {
+                'st': st,
+                'pd': pd, 
+                'np': np,
+                'px': px,
+                'go': go,
+                'datetime': datetime,
+                'date': date,
+                'timedelta': timedelta,
+                'warnings': warnings,
+                'db': db,
+                'geo': geo,
+                '__name__': '__main__'
+            }
+            
+            # Execute the app with proper globals
+            with open('app.py', 'r', encoding='utf-8') as f:
+                app_code = f.read()
+            exec(app_code, app_globals)
             return 0
         except Exception as e:
             print(f"❌ Failed to run app: {e}")
