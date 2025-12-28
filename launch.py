@@ -38,10 +38,11 @@ def main():
         print("❌ .env file not found!")
         print("   Please copy .env.example to .env and configure your database credentials")
         return 1
-    elif env_file.exists():
+    elif env_file.exists() and not is_cloud:
         print("✅ Found .env file")
     elif is_cloud:
-        print("☁️ Running in cloud - using cloud secrets")
+        print("☁️ Running in cloud - using Streamlit Cloud secrets")
+        print("   💡 Credentials should be configured in Streamlit Cloud dashboard under Settings → Secrets")
     
     # Check required packages
     try:
