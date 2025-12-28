@@ -55,24 +55,18 @@ def main():
         print(f"❌ Database test failed: {e}")
         return 1
     
-    # Launch Streamlit
-    print("🚀 Launching Streamlit application...")
-    print("   📱 Open your browser to: http://localhost:8501")
-    print("   ⏹️  Press Ctrl+C to stop the application")
+    # For Streamlit Cloud deployment, we just run the setup checks
+    # and then import the main app instead of launching subprocess
+    print("🚀 Setup complete! App ready for Streamlit Cloud...")
+    print("   ✅ All checks passed")
     print()
     
+    # Import and run the main app directly
     try:
-        result = subprocess.run([
-            sys.executable, "-m", "streamlit", "run", "app.py",
-            "--server.port=8501",
-            "--server.address=localhost"
-        ])
-        return result.returncode
-    except KeyboardInterrupt:
-        print("\n👋 Application stopped by user")
+        import app
         return 0
     except Exception as e:
-        print(f"❌ Failed to launch Streamlit: {e}")
+        print(f"❌ Failed to import app: {e}")
         return 1
 
 if __name__ == "__main__":
