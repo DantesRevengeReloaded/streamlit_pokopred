@@ -6,8 +6,8 @@ Run this script to start the Streamlit app with proper environment setup.
 
 import os
 import sys
-import subprocess
 from pathlib import Path
+
 
 def detect_cloud_environment():
     """Detect if we're running in Streamlit Cloud."""
@@ -20,133 +20,86 @@ def detect_cloud_environment():
     ]
     return any(cloud_indicators)
 
+
 def main():
     print("Football Predictions Dashboard Launcher")
     print("=" * 50)
-    
-    # Detect environment
+
     is_cloud = detect_cloud_environment()
     print(f"🌍 Running in: {'Streamlit Cloud' if is_cloud else 'Local Environment'}")
-    
-    # Ensure we're in the right directory
+
+    if not is_cloud:
+        print("❌ This launcher is intended for Streamlit Cloud deployments only.")
+        print("   Please use `streamlit run app.py` for local development.")
+        return 1
+
     script_dir = Path(__file__).parent
     os.chdir(script_dir)
-    
-    # Check for .env file (only required for local, optional for cloud)
-    env_file = Path(".env")
-    if not is_cloud and not env_file.exists():
-        print("❌ .env file not found!")
-        print("   Please copy .env.example to .env and configure your database credentials")
-        return 1
-    elif env_file.exists() and not is_cloud:
-        print("✅ Found .env file")
-    elif is_cloud:
-        print("☁️ Running in cloud - using Streamlit Cloud secrets")
-        print("   💡 Credentials should be configured in Streamlit Cloud dashboard under Settings → Secrets")
-    
-    # Check required packages
+
+    print("☁️ Running in cloud - using Streamlit Cloud secrets")
+    print("   💡 Configure credentials in Streamlit Cloud dashboard under Settings → Secrets")
+
     try:
-        import streamlit
-        import psycopg2
-        import plotly
-        import pandas
-        from dotenv import load_dotenv
+        import streamlit  # noqa: F401
+        import psycopg2  # noqa: F401
+        import plotly  # noqa: F401
+        import pandas  # noqa: F401
+        from dotenv import load_dotenv  # noqa: F401
         print("✅ All required packages are available")
-    except ImportError as e:
-        print(f"❌ Missing package: {e}")
-        if not is_cloud:
-            print("   Run: pip install -r requirements.txt")
+    except ImportError as err:
+        print(f"❌ Missing package: {err}")
         return 1
-    
-    # Test database connection (non-blocking for cloud)
+
     print("🗄️ Testing database connection...")
     try:
         sys.path.append('.')
         from db import test_database_connection
-        
+
         if test_database_connection():
             print("✅ Database connection successful")
         else:
-            if is_cloud:
-                print("⚠️ Database connection failed - app will start anyway")
-            else:
-                print("❌ Database connection failed")
-                print("   Please check your .env file credentials")
-                return 1
-    except Exception as e:
-        if is_cloud:
-            print(f"⚠️ Database test failed: {e} - app will start anyway")
-        else:
-            print(f"❌ Database test failed: {e}")
-            return 1
-    
-    if is_cloud:
-        # For Streamlit Cloud: Execute the app content directly
-        print("🚀 Starting app for Streamlit Cloud...")
-        try:
-            # Set up the global namespace with required imports
-            import streamlit as st
-            import pandas as pd
-            import numpy as np
-            import plotly.express as px
-            import plotly.graph_objects as go
-            from datetime import datetime, date, timedelta
-            import warnings
-            warnings.filterwarnings('ignore')
-            
-            # Import local modules
-            import db
-            import geo
-            
-            # Create globals dictionary for exec
-            app_globals = {
-                'st': st,
-                'pd': pd, 
-                'np': np,
-                'px': px,
-                'go': go,
-                'datetime': datetime,
-                'date': date,
-                'timedelta': timedelta,
-                'warnings': warnings,
-                'db': db,
-                'geo': geo,
-                '__name__': '__main__'
-            }
-            
-            # Execute the app with proper globals
-            with open('app.py', 'r', encoding='utf-8') as f:
-                app_code = f.read()
-            exec(app_code, app_globals)
-            return 0
-        except Exception as e:
-            print(f"❌ Failed to run app: {e}")
-            return 1
-    else:
-        # For local development: Launch subprocess
-        print("🚀 Launching Streamlit application locally...")
-        print("   📱 Open your browser to: http://localhost:8501")
-        print("   ⏹️  Press Ctrl+C to stop the application")
-        print()
-        
-        try:
-            result = subprocess.run([
-                sys.executable, "-m", "streamlit", "run", "app.py",
-                "--server.port=8501",
-                "--server.address=localhost"
-            ])
-            return result.returncode
-        except KeyboardInterrupt:
-            print("\n👋 Application stopped by user")
-            return 0
-        except Exception as e:
-            print(f"❌ Failed to launch Streamlit: {e}")
-            return 1
+            print("⚠️ Database connection failed - app will start anyway")
+    except Exception as err:
+        print(f"⚠️ Database test failed: {err} - app will start anyway")
+
+    print("🚀 Starting app for Streamlit Cloud...")
+    try:
+        import streamlit as st
+        import pandas as pd
+        import numpy as np
+        import plotly.express as px
+        import plotly.graph_objects as go
+        from datetime import datetime, date, timedelta
+        import warnings
+
+        warnings.filterwarnings('ignore')
+
+        import db
+        import geo
+
+        app_globals = {
+            'st': st,
+            'pd': pd,
+            'np': np,
+            'px': px,
+            'go': go,
+            'datetime': datetime,
+            'date': date,
+            'timedelta': timedelta,
+            'warnings': warnings,
+            'db': db,
+            'geo': geo,
+            '__name__': '__main__'
+        }
+
+        with open('app.py', 'r', encoding='utf-8') as app_file:
+            app_code = app_file.read()
+        exec(app_code, app_globals)
+        return 0
+    except Exception as err:
+        print(f"❌ Failed to run app: {err}")
+        return 1
+
 
 if __name__ == "__main__":
-    if detect_cloud_environment():
-        # In cloud, run the main function and then execute the app
-        main()
-    else:
-        # In local, run normally
-        sys.exit(main())
+    sys.exit(main())

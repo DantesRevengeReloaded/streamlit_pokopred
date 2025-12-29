@@ -35,22 +35,75 @@ class DatabaseManager:
         """
         self.config_path = config_path
         self.connection_params = self._load_db_config()
+
+    def _load_streamlit_secrets(self) -> Dict[str, Any]:
+        """Attempt to load database credentials from Streamlit secrets."""
+        try:
+            secrets_obj = getattr(st, "secrets", None)
+            if not secrets_obj:
+                return {}
+            def to_plain_dict(value: Any) -> Dict[str, Any]:
+                try:
+                    return dict(value)
+                except Exception:
+                    return {}
+            secrets_dict = to_plain_dict(secrets_obj)
+            sections = [to_plain_dict(secrets_dict.get('database', {})), secrets_dict]
+            for section in sections:
+                if not section:
+                    continue
+                candidate = {
+                    'host': section.get('DB_HOST') or section.get('host'),
+                    'port': section.get('DB_PORT') or section.get('port'),
+                    'database': section.get('DB_NAME') or section.get('database'),
+                    'user': section.get('DB_USER') or section.get('user'),
+                    'password': section.get('DB_PASSWORD') or section.get('password')
+                }
+                if any(candidate.values()):
+                    return candidate
+        except Exception as exc:
+            logger.debug(f"Streamlit secrets unavailable: {exc}")
+        return {}
         
     def _load_db_config(self) -> Dict[str, str]:
         """Load database configuration from .env file, config.json, or environment variables."""
         try:
-            # Primary: Load from .env file or environment variables
-            db_config = {
-                'host': os.getenv('DB_HOST', 'localhost'),
-                'port': int(os.getenv('DB_PORT', 5432)),
+            # Establish blank config to progressively fill
+            db_config: Dict[str, Any] = {
+                'host': None,
+                'port': None,
+                'database': None,
+                'user': None,
+                'password': None
+            }
+            
+            def merge_config(source: Dict[str, Any]):
+                if not source:
+                    return
+                for key in db_config.keys():
+                    value = source.get(key)
+                    if value in (None, ''):
+                        continue
+                    if key == 'port':
+                        try:
+                            db_config[key] = int(value)
+                        except (TypeError, ValueError):
+                            continue
+                    else:
+                        db_config[key] = value
+            
+            # Highest priority: Streamlit secrets (cloud deployment)
+            merge_config(self._load_streamlit_secrets())
+            
+            # Next: environment variables / .env for local dev
+            env_config = {
+                'host': os.getenv('DB_HOST'),
+                'port': os.getenv('DB_PORT'),
                 'database': os.getenv('DB_NAME'),
                 'user': os.getenv('DB_USER'),
                 'password': os.getenv('DB_PASSWORD')
             }
-            
-            # Check if all required credentials are present from environment
-            if all([db_config['database'], db_config['user'], db_config['password']]):
-                return db_config
+            merge_config(env_config)
             
             # Fallback: Try to load from config.json
             if os.path.exists(self.config_path):
@@ -58,14 +111,15 @@ class DatabaseManager:
                     config = json.load(f)
                     
                 file_db_config = config.get('database', {})
-                
-                # Override missing values with config.json values
-                for key in ['host', 'port', 'database', 'user', 'password']:
-                    if not db_config.get(key) and file_db_config.get(key):
-                        if key == 'port':
-                            db_config[key] = int(file_db_config[key])
-                        else:
-                            db_config[key] = file_db_config[key]
+                merge_config(file_db_config)
+            
+            # Default host/port if still missing to avoid psycopg2 complaining about None
+            db_config['host'] = db_config['host'] or 'localhost'
+            db_config['port'] = db_config['port'] or 5432
+            
+            missing = [key for key in ['database', 'user', 'password'] if not db_config.get(key)]
+            if missing:
+                logger.warning(f"Database configuration missing values: {', '.join(missing)}")
             
             return db_config
                 
