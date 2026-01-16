@@ -74,7 +74,9 @@ class DatabaseManager:
                 'port': None,
                 'database': None,
                 'user': None,
-                'password': None
+                'password': None,
+                # Neon (and many managed Postgres providers) require SSL; default to "require"
+                'sslmode': 'require'
             }
             
             def merge_config(source: Dict[str, Any]):
@@ -101,7 +103,8 @@ class DatabaseManager:
                 'port': os.getenv('DB_PORT'),
                 'database': os.getenv('DB_NAME'),
                 'user': os.getenv('DB_USER'),
-                'password': os.getenv('DB_PASSWORD')
+                'password': os.getenv('DB_PASSWORD'),
+                'sslmode': os.getenv('DB_SSLMODE')  # Optional override; falls back to "require"
             }
             merge_config(env_config)
             
