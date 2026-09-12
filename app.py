@@ -1174,19 +1174,19 @@ def main():
             
             # Apply conditional formatting with bright gradients
             if '🎯 Result' in df.columns:
-                styled_df = styled_df.applymap(highlight_prediction, subset=['🎯 Result'])
+                styled_df = styled_df.map(highlight_prediction, subset=['🎯 Result'])
             
             if '📊 Confidence' in df.columns:
-                styled_df = styled_df.applymap(highlight_confidence, subset=['📊 Confidence'])
+                styled_df = styled_df.map(highlight_confidence, subset=['📊 Confidence'])
             
             if '⚖️ Draw %' in df.columns:
-                styled_df = styled_df.applymap(highlight_draw_probability, subset=['⚖️ Draw %'])
+                styled_df = styled_df.map(highlight_draw_probability, subset=['⚖️ Draw %'])
                 
             if '🏠 Home' in df.columns:
-                styled_df = styled_df.applymap(style_team_names, subset=['🏠 Home'])
+                styled_df = styled_df.map(style_team_names, subset=['🏠 Home'])
                 
             if '✈️ Away' in df.columns:
-                styled_df = styled_df.applymap(style_team_names, subset=['✈️ Away'])
+                styled_df = styled_df.map(style_team_names, subset=['✈️ Away'])
             
             # Set modern colorful table properties with bright skeleton
             styled_df = styled_df.set_properties(**{
@@ -1716,13 +1716,13 @@ def main():
             
             # Apply conditional formatting
             if '📍 Rank' in df.columns:
-                styled_df = styled_df.applymap(highlight_rank, subset=['📍 Rank'])
+                styled_df = styled_df.map(highlight_rank, subset=['📍 Rank'])
             
             if '⭐ Points' in df.columns:
-                styled_df = styled_df.applymap(highlight_points, subset=['⭐ Points'])
+                styled_df = styled_df.map(highlight_points, subset=['⭐ Points'])
                 
             if '👕 Team' in df.columns:
-                styled_df = styled_df.applymap(style_team_names, subset=['👕 Team'])
+                styled_df = styled_df.map(style_team_names, subset=['👕 Team'])
             
             # Set table styling
             styled_df = styled_df.set_properties(**{
