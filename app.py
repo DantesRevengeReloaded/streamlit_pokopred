@@ -1299,7 +1299,7 @@ def main():
             # Create dark themed map
             fig = go.Figure()
             
-            fig.add_trace(go.Scattermapbox(
+            fig.add_trace(go.Scattermap(
                 lat=matches_with_coords['latitude'],
                 lon=matches_with_coords['longitude'],
                 mode='markers',
@@ -1335,7 +1335,7 @@ def main():
             
             # Dark theme layout
             fig.update_layout(
-                mapbox=dict(
+                map=dict(
                     style='carto-darkmatter',
                     center=dict(
                         lat=matches_with_coords['latitude'].mean(),
